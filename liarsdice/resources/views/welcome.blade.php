@@ -17,15 +17,13 @@
 
     <div id="current-user" data-active-users='@json($activeUsers)'>
         @if(count($activeUsers) > 0)
-            <p>Aan de beurt: {{ $activeUsers[0]->ip_address }} ({{ $activeUsers[0]->device_type }})</p>
+            <p>Aan de beurt: {{ $activeUsers[0]->ip_address }}</p>
         @else
             <p>Er zijn geen actieve gebruikers.</p>
         @endif
     </div>
 
     <button id="next-user-btn">Volgende gebruiker</button>
-
-    <p>Aantal dobbelstenen: <span id="dice-count">Laden...</span></p>
 
     <script src="{{ asset('js/userRotation.js') }}"></script>
 </body>
