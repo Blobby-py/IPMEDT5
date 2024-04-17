@@ -7,13 +7,13 @@ use Illuminate\Support\Facades\DB;
 
 class WelcomeController extends Controller
 {
-    public function showWelcome()
+    public function index(Request $request)
     {
-        // Haal alle gebruikers op waarvan de last_seen tijd minder dan 5 minuten geleden is
-        $activeUsers = DB::table('user_activities')
-            ->where('last_seen', '>=', now()->subMinutes(5))
-            ->get();
-
-        return view('welcome', ['activeUsers' => $activeUsers]);
+        $activeUsers = DB::table('user_activities')->get();
+        
+        // Haal het apparaattype op uit de attributen van het request
+        $deviceType = $request->attributes->get('device_type');
+        
+        return view('welcome', ['activeUsers' => $activeUsers, 'deviceType' => $deviceType]);
     }
 }
