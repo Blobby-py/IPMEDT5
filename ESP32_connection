@@ -1,0 +1,130 @@
+#define USE_SERIAL Serial
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WiFiMulti.h>
+#include <HTTPClient.h>
+
+WiFiMulti wifiMulti;
+
+int DobbelsteenOver = 6;
+int DobbelsteenInBak = 0;
+int analogValue;
+
+byte LDRS[6] = {13, 12, 14, 27, 26, 25};
+
+void setup() {
+    USE_SERIAL.begin(115200); // Begin serial communicatie met baudrate 115200
+    USE_SERIAL.println();
+    USE_SERIAL.println("[SETUP] Starten...");
+    delay(1000);
+
+    wifiMulti.addAP("SpongeBob2018", "Comoren2017"); // Voeg WiFi-netwerk toe
+}
+
+void verbinden() {
+  // Wacht tot de WiFi-verbinding tot stand is gebracht
+  if (wifiMulti.run() == WL_CONNECTED) {
+      
+    HTTPClient http;
+    http.begin("http://192.168.178.30:8000/"); // URL van de server
+
+    // Voeg header toe om aan te geven dat het een ESP32 is
+    http.addHeader("X-ESP32-MAC", "true");
+
+    // Stuur een POST-verzoek met de parameter
+    int httpCode = http.GET();
+
+    http.end();
+  }
+}
+
+void dobbelstenen_over(int DobbelsteenOver) {
+    if (wifiMulti.run() == WL_CONNECTED) {
+        
+        HTTPClient http;
+        http.begin("http://192.168.178.30:8000/over"); // URL van de server
+
+        // Voeg header toe om aan te geven dat het een ESP32 is
+        http.addHeader("X-ESP32-MAC", "true");
+
+        String overStr = String(DobbelsteenOver);
+        USE_SERIAL.println("OVER: " + overStr);
+
+        int httpCode = http.GET();
+        int overCode = http.POST(overStr);
+
+        if (overCode > 0) {
+            if (overCode == HTTP_CODE_OK) {
+                String payload = http.getString();
+                USE_SERIAL.println(payload);
+            }
+        } else {
+            USE_SERIAL.printf("[HTTP] POST-verzoek mislukt, fout: %s\n", http.errorToString(overCode).c_str());
+        }
+        http.end();
+    }
+}
+
+void dobbelstenen_in_bak(int DobbelsteenInBak) {
+    // Wacht tot de WiFi-verbinding tot stand is gebracht
+    if (wifiMulti.run() == WL_CONNECTED) {
+        
+        HTTPClient http;
+        http.begin("http://192.168.178.30:8000/inBak"); // URL van de server
+
+        // Voeg header toe om aan te geven dat het een ESP32 is
+        http.addHeader("X-ESP32-MAC", "true");
+
+        // Zet integer waarde om naar een string
+        String inBakStr = String(DobbelsteenInBak);
+        USE_SERIAL.println("IN BAK: " + inBakStr);
+
+        // Stuur een POST-verzoek met de parameter
+        int httpCode = http.GET();
+        int inBakCode = http.POST(inBakStr);
+
+        // Controleer de HTTP-statuscode
+        if (inBakCode > 0) {
+            if (inBakCode == HTTP_CODE_OK) {
+                String payload = http.getString();
+                USE_SERIAL.println(payload);
+            }
+        } else {
+            // Verbinding mislukt
+            USE_SERIAL.printf("[HTTP] POST-verzoek mislukt, fout: %s\n", http.errorToString(inBakCode).c_str());
+        }
+
+        // Sluit de HTTP-verbinding
+        http.end();
+    }
+}
+
+void loop() {
+  verbinden();
+
+  for (byte i = 0; i <= 5; i++) {
+    analogValue = analogRead(LDRS[i]);
+    USE_SERIAL.println(analogValue);
+    if (analogValue <= 150) {
+      DobbelsteenInBak += 1;
+      DobbelsteenOver -= 1;
+    }
+  }
+
+  String result = "Hoeveelheid dobbelstenen over:";
+  result += DobbelsteenOver;
+  
+  String bak = "Dobbelstenen in bak:";
+  bak += DobbelsteenInBak;
+
+  USE_SERIAL.println("---------");
+
+  dobbelstenen_in_bak(DobbelsteenInBak);
+  dobbelstenen_over(DobbelsteenOver);
+
+  DobbelsteenInBak = 0;
+  DobbelsteenOver = 6;
+
+  delay(1000);
+}
