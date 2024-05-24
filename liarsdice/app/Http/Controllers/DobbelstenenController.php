@@ -8,10 +8,6 @@ class DobbelstenenController extends Controller
 {
     public function updateDobbelstenenFromESP32(Request $request)
     {
-        // Verwerk het verzoek van de ESP32 om de dobbelstenen te updaten
-        // Hier kun je de logica implementeren om de dobbelstenen te verlagen en verhogen
-        
-        // Voorbeeldlogica:
         $macAddress = $request->header('X-ESP32-MAC');
         $device = Esp32Device::where('mac_address', $macAddress)->first();
         
@@ -21,7 +17,6 @@ class DobbelstenenController extends Controller
             $device->dobbelstenen_bak += 1;
             $device->save();
             
-            // Optioneel: Log de veranderingen
             Over::create(['dobbelsteen_over' => $device->dobbelstenen_over]);
             Bak::create(['dobbelsteen_bak' => $device->dobbelstenen_bak]);
         }
